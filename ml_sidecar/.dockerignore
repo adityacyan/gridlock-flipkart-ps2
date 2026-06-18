@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+.venv
+venv
+trained_models/*.pkl
+*.png

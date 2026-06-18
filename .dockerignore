@@ -1,0 +1,11 @@
+.git
+.gitignore
+.agents
+.vscode
+node_modules
+*.md
+opencode.json
+skills-lock.json
+project_theme.txt
+glidlockps2 cyan.ipynb
+.venv
