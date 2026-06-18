@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+trained_models/*.pkl
+ml_sidecar/trained_models/*.pkl
+node_modules/
+.next/
+out/
+backend/gridlock-backend
+backend/*.exe
+.env
+.env.local
+.env*.local
+.DS_Store
+Thumbs.db
+.agents/
+pnpm-lock.yaml
+.ipynb_checkpoints/
