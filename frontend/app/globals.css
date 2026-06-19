@@ -1,0 +1,358 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* ── TRAFFIC.NOIR Design Tokens ── */
+:root {
+  /* Core brutalist palette */
+  --noir-black:   #000000;
+  --noir-white:   #f9f9f9;
+  --noir-surface: #f3f3f3;
+  --noir-border:  #000000;
+  --noir-muted:   #5d5f5f;
+  --noir-dim:     #848484;
+  --noir-shadow:  6px;
+
+  /* Severity colors (keep these functional) */
+  --sev-low:      #4ade80;
+  --sev-medium:   #facc15;
+  --sev-high:     #fb923c;
+  --sev-critical: #f87171;
+
+  /* App Shadcn tokens — mapped to noir */
+  --background:         #f9f9f9;
+  --foreground:         #1b1b1b;
+  --card:               #ffffff;
+  --card-foreground:    #1b1b1b;
+  --popover:            #ffffff;
+  --popover-foreground: #1b1b1b;
+  --primary:            #000000;
+  --primary-foreground: #f9f9f9;
+  --secondary:          #eeeeee;
+  --secondary-foreground:#1b1b1b;
+  --muted:              #eeeeee;
+  --muted-foreground:   #5d5f5f;
+  --accent:             #e2e2e2;
+  --accent-foreground:  #1b1b1b;
+  --destructive:        #ba1a1a;
+  --border:             #000000;
+  --input:              #f3f3f3;
+  --ring:               #000000;
+  --radius:             0px;
+
+  /* Landing / global base (shared with app now) */
+  --bg-primary:    #f9f9f9;
+  --bg-secondary:  #f3f3f3;
+  --bg-tertiary:   #eeeeee;
+  --border-subtle: rgba(0,0,0,0.12);
+  --border-hover:  rgba(0,0,0,0.3);
+  --text-primary:  #000000;
+  --text-secondary:#5d5f5f;
+  --text-muted:    #848484;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    border-radius: 0 !important;
+  }
+  body {
+    background: var(--noir-white);
+    color: var(--noir-black);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    /* Noise texture from stitch design */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+}
+
+/* ── App page overrides (inside [data-app]) ── */
+[data-app] {
+  background: var(--noir-white);
+  color: var(--noir-black);
+}
+
+/* ── Typography helpers ── */
+.font-display {
+  font-family: "Archivo Narrow", "Arial Narrow", condensed, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.0;
+}
+.font-mono-noir {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ── Brutalist Card ── */
+.card-brutal {
+  background: var(--noir-white);
+  border: 3px solid var(--noir-black);
+  box-shadow: var(--noir-shadow) var(--noir-shadow) 0px 0px #000000;
+  border-radius: 0 !important;
+}
+.card-brutal-inv {
+  background: var(--noir-black);
+  color: var(--noir-white);
+  border: 3px solid var(--noir-black);
+  box-shadow: var(--noir-shadow) var(--noir-shadow) 0px 0px #5d5f5f;
+  border-radius: 0 !important;
+}
+
+/* ── Brutalist Button ── */
+.btn-brutal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Archivo Narrow", condensed, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  border: 3px solid var(--noir-black);
+  background: var(--noir-black);
+  color: var(--noir-white);
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0px 0px #000000;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-brutal:hover {
+  box-shadow: 4px 4px 0px 0px #000000;
+  transform: translate(2px, 2px);
+}
+.btn-brutal:active {
+  box-shadow: 0px 0px 0px 0px #000000;
+  transform: translate(6px, 6px);
+}
+
+.btn-brutal-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Archivo Narrow", condensed, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 20px;
+  border: 3px solid var(--noir-black);
+  background: var(--noir-white);
+  color: var(--noir-black);
+  border-radius: 0 !important;
+  box-shadow: 6px 6px 0px 0px #000000;
+  transition: box-shadow 0.1s ease, transform 0.1s ease, background 0.1s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-brutal-ghost:hover {
+  background: var(--noir-black);
+  color: var(--noir-white);
+  box-shadow: 4px 4px 0px 0px #000000;
+  transform: translate(2px, 2px);
+}
+.btn-brutal-ghost:active {
+  box-shadow: 0px 0px 0px 0px #000000;
+  transform: translate(6px, 6px);
+}
+
+/* ── Legacy button classes (remapped to brutalist) ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Archivo Narrow", condensed, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 20px;
+  border: 3px solid var(--noir-black);
+  background: var(--noir-black);
+  color: var(--noir-white);
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0px 0px #000000;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  box-shadow: 2px 2px 0px 0px #000000;
+  transform: translate(2px, 2px);
+}
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  border: 2px solid var(--noir-black);
+  background: var(--noir-white);
+  color: var(--noir-black);
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0px 0px #000000;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: var(--noir-surface);
+  box-shadow: 2px 2px 0px 0px #000000;
+  transform: translate(1px, 1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--noir-muted);
+  border-radius: 0 !important;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  transition: color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+}
+.btn-ghost:hover { color: var(--noir-black); background: var(--noir-surface); }
+
+/* ── Surface (remapped) ── */
+.surface {
+  background: var(--noir-white);
+  border: 2px solid var(--noir-black);
+}
+.surface-hover {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.surface-hover:hover {
+  border-color: var(--noir-black);
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+/* ── Micro animations ── */
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes barGrow  { from { width: 0; } }
+@keyframes dot-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes float    { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes marching { to { stroke-dashoffset: -16; } }
+
+.anim-in  { animation: fadeIn 0.25s ease forwards; }
+.anim-bar { animation: barGrow 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
+.anim-dot { animation: dot-blink 2s ease-in-out infinite; }
+
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+
+/* ── Scrollbar (minimal dark on light) ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #848484; }
+
+/* ── Select ── */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px !important;
+  border-radius: 0 !important;
+}
+select option { background: #f9f9f9; color: #000000; }
+
+/* ── Input focus ── */
+input:focus, select:focus {
+  outline: none;
+  border-color: #000000 !important;
+  box-shadow: 3px 3px 0px 0px #000000;
+}
+input, select, textarea {
+  border-radius: 0 !important;
+  background: var(--noir-white);
+  border: 2px solid #000000;
+  color: #000000;
+  font-family: "JetBrains Mono", monospace;
+}
+input::placeholder, textarea::placeholder { color: #848484; }
+
+/* ── Severity dots ── */
+.dot-low      { background: #4ade80; }
+.dot-medium   { background: #facc15; }
+.dot-high     { background: #fb923c; }
+.dot-critical { background: #f87171; }
+
+/* ── Severity badge overrides ── */
+.badge-low      { background: #dcfce7; color: #14532d; border: 2px solid #4ade80; }
+.badge-medium   { background: #fefce8; color: #713f12; border: 2px solid #facc15; }
+.badge-high     { background: #fff7ed; color: #7c2d12; border: 2px solid #fb923c; }
+.badge-critical { background: #fef2f2; color: #7f1d1d; border: 2px solid #f87171; }
+
+/* ── Dividers ── */
+hr { border-color: var(--noir-black); border-width: 2px; }
+
+/* ── Label / eyebrow ── */
+.eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--noir-muted);
+}
+
+/* ── Thick border section divider ── */
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.section-rule h2 {
+  font-family: "Archivo Narrow", condensed, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.section-rule::after {
+  content: "";
+  flex: 1;
+  height: 3px;
+  background: #000000;
+}
+
+/* ── prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
