@@ -23,3 +23,8 @@ pnpm-lock.yaml
 
 # Design tool artifacts
 .stitch/
+
+# Deployment docs
+DEPLOY.md
+
+

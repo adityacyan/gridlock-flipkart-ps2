@@ -320,7 +320,7 @@ gridlock/
 |-- docker-compose.yml              Orchestrates sidecar + backend + frontend
 |-- .gitignore
 |-- README.md                       This file
-|-- DEPLOY.md                       Railway + Vercel deployment guide
+
 +-- ROADMAP.md                      Day-by-day project plan
 ```
 
@@ -538,8 +538,6 @@ Or download from the project's release artifacts.
 ---
 
 ## Deployment
-
-See **[DEPLOY.md](./DEPLOY.md)** for detailed Railway + Vercel deployment instructions.
 
 ### Railway (Python API + ML Sidecar)
 
