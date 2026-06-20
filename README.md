@@ -1,6 +1,16 @@
 # ASTRAM Gridlock -- Bengaluru Traffic Congestion Prediction
 
-Event-driven congestion forecasting for planned and unplanned events in Bengaluru. Uses a stacked ensemble of LightGBM, XGBoost, MLP, and TabNet to predict severity (0-3) and recommend resource deployment.
+Every morning, 10 million people in Bengaluru get into a vehicle and hope. Hope that the road ahead is clear. Hope that the rally on MG Road won't snarl the evening commute. Hope that the water-logged underpass near Hebbal isn't going to cost them two hours.
+
+Right now, traffic management is reactive. A VIP movement is announced, and officers are deployed by gut feel. An accident blocks Hosur Road, and by the time resources arrive, the damage is done. There is no system that looks at an event and says: *this will cause a Level 3 gridlock, deploy 25 officers, close this lane, and divert traffic here.*
+
+This is that system.
+
+ASTRAM Gridlock takes a single event description -- location, time, cause, corridor -- and runs it through a stacked ensemble of four ML models. In under 120 milliseconds, it returns a severity class (Low / Medium / High / Critical), per-class probabilities, and a concrete resource deployment plan: how many officers, what barricading, which diversion route.
+
+The ensemble achieves **73.9% accuracy** and a **69.7% macro F1-score** across four severity classes, with the meta-learner consistently outperforming every individual base model. The system was trained on 8,173 historical traffic events from Bengaluru's Astram traffic management system, with 30+ engineered features capturing spatial, temporal, and operational patterns. A KMeans geo-clustering layer (k=20) learns Bengaluru's natural traffic zones directly from incident coordinates.
+
+The result is a deployable, production-grade decision support tool for traffic police, event organisers, and civic agencies -- turning reactive chaos into proactive, data-driven resource allocation.
 
 ---
 
