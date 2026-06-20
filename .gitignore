@@ -20,3 +20,6 @@ Thumbs.db
 .agents/
 pnpm-lock.yaml
 .ipynb_checkpoints/
+
+# Design tool artifacts
+.stitch/
