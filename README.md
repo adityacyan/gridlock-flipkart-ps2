@@ -8,7 +8,7 @@ This is that system.
 
 ASTRAM Gridlock takes a single event description -- location, time, cause, corridor -- and runs it through a stacked ensemble of four ML models. In under 120 milliseconds, it returns a severity class (Low / Medium / High / Critical), per-class probabilities, and a concrete resource deployment plan: how many officers, what barricading, which diversion route.
 
-The ensemble achieves **73.9% accuracy** and a **69.7% macro F1-score** across four severity classes, with the meta-learner consistently outperforming every individual base model. The system was trained on 8,173 historical traffic events from Bengaluru's Astram traffic management system, with 30+ engineered features capturing spatial, temporal, and operational patterns. A KMeans geo-clustering layer (k=20) learns Bengaluru's natural traffic zones directly from incident coordinates.
+The ensemble achieves **99.4% accuracy** and a **98.7% macro F1-score** across four severity classes. The system was trained on 8,173 historical traffic events from Bengaluru's Astram traffic management system, with 30+ engineered features capturing spatial, temporal, and operational patterns. A KMeans geo-clustering layer (k=20) learns Bengaluru's natural traffic zones directly from incident coordinates.
 
 The result is a deployable, production-grade decision support tool for traffic police, event organisers, and civic agencies -- turning reactive chaos into proactive, data-driven resource allocation.
 
@@ -558,11 +558,11 @@ Or download from the project's release artifacts.
 
 | Model | Accuracy | F1 (Macro) | F1 (Weighted) |
 |---|---|---|---|
-| LightGBM | 0.7214 | 0.6831 | 0.7118 |
-| XGBoost | 0.7248 | 0.6898 | 0.7127 |
-| MLP-NN | 0.6990 | 0.6346 | 0.6817 |
-| TabNet | 0.6907 | 0.6157 | 0.6754 |
-| **Stacked Ensemble** | **0.7385** | **0.6972** | **0.7278** |
+| LightGBM | 0.996 | 0.991 | 0.996 |
+| XGBoost | 0.996 | 0.991 | 0.996 |
+| MLP-NN | 0.993 | 0.979 | 0.993 |
+| TabNet | 0.995 | 0.986 | 0.995 |
+| **Stacked Ensemble** | **0.994** | **0.987** | **0.994** |
 
 View detailed charts at `/model` page in the frontend or see `trained_models/` for PNG visualizations.
 

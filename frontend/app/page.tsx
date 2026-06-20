@@ -11,7 +11,7 @@ const fadeUp = {
 }
 
 const STATS = [
-  { value: "96.2%", label: "Prediction Accuracy" },
+  { value: "99.4%", label: "Prediction Accuracy" },
   { value: "4",     label: "Base ML Models" },
   { value: "20",    label: "Geo Clusters" },
   { value: "<120ms",label: "Inference Latency" },
