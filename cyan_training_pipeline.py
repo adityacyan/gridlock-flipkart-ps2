@@ -61,7 +61,7 @@ if IS_KAGGLE:
     print("[ENV] ✅ Kaggle detected")
     KAGGLE_INPUT = Path('/kaggle/input')
     OUTPUT_DIR   = Path('/kaggle/working')          # Kaggle persists this dir
-    ZIP_NAME     = str(OUTPUT_DIR / 'astram_models_bundle.zip')
+    ZIP_NAME     = str(OUTPUT_DIR / 'trained_models_bundle.zip')
 
     # Auto-discover the dataset CSV anywhere under /kaggle/input
     all_csvs = list(KAGGLE_INPUT.rglob('*.csv'))
@@ -89,7 +89,7 @@ else:
         SCRIPT_DIR = Path.cwd()
     OUTPUT_DIR = SCRIPT_DIR / 'trained_models'
     CSV_PATH   = SCRIPT_DIR / 'Astram event data_anonymized - Astram event data_anonymizedb40ac87 (1).csv'
-    ZIP_NAME   = str(SCRIPT_DIR / 'astram_models_bundle.zip')
+    ZIP_NAME   = str(SCRIPT_DIR / 'trained_models_bundle.zip')
     print(f"[OK] Dataset path  : {CSV_PATH}")
     print(f"[OK] Output dir    : {OUTPUT_DIR}")
 
