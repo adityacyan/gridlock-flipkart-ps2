@@ -1,5 +1,4 @@
 "use client"
-import { useEffect, useState } from "react"
 import { PredictResponse } from "@/types"
 
 const SEV_COLOR: Record<string, string> = {
@@ -24,13 +23,7 @@ const SEV_TEXT: Record<string, string> = {
 }
 
 export default function SeverityCard({ result }: { result: PredictResponse }) {
-  const { severity_label, severity_level, confidence, recommendations } = result
-  const [bar, setBar] = useState(0)
-
-  useEffect(() => {
-    const t = setTimeout(() => setBar(confidence * 100), 80)
-    return () => clearTimeout(t)
-  }, [confidence])
+  const { severity_label, severity_level, recommendations } = result
 
   const accentColor  = SEV_COLOR[severity_label]  ?? "#848484"
   const accentBg     = SEV_BG[severity_label]     ?? "#f3f3f3"
@@ -49,22 +42,6 @@ export default function SeverityCard({ result }: { result: PredictResponse }) {
             </span>
             <span className="font-mono-noir text-xs text-[#848484]">Level {severity_level} / 3</span>
           </div>
-        </div>
-        <div className="text-right">
-          <p className="font-mono-noir text-[10px] uppercase tracking-widest text-[#848484] mb-2">Confidence</p>
-          <span className="font-display text-3xl" style={{ color: accentText }}>
-            {(confidence * 100).toFixed(1)}%
-          </span>
-        </div>
-      </div>
-
-      {/* Confidence bar */}
-      <div className="px-5 pt-3.5 pb-1 border-b-[2px] border-black/10">
-        <div className="w-full bg-[#e2e2e2] h-[4px] overflow-hidden">
-          <div
-            className="h-[4px] anim-bar"
-            style={{ width: `${bar}%`, background: accentColor, transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)" }}
-          />
         </div>
       </div>
 

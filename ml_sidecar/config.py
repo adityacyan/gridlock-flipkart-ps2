@@ -13,6 +13,7 @@ MODEL_FILES = {
     "kmeans":         MODELS_DIR / "kmeans_model.pkl",
     "feature_names":  MODELS_DIR / "feature_names.pkl",
     "tabnet":         MODELS_DIR / "tabnet_model.zip",
+    "geo_lookup":     MODELS_DIR / "geo_lookup.pkl",
 }
 
 SEVERITY_LABELS = {0: "Low", 1: "Medium", 2: "High", 3: "Critical"}

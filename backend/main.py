@@ -87,6 +87,17 @@ async def get_meta():
         raise HTTPException(status_code=503, detail=f"ML service unavailable: {e}")
 
 
+@app.get("/api/lookup-location")
+async def lookup_location(lat: float, lng: float):
+    try:
+        r = await client.get(f"{SIDECAR_URL}/lookup-location", params={"lat": lat, "lng": lng})
+        if r.status_code != 200:
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        return r.json()
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"ML service unavailable: {e}")
+
+
 @app.get("/api/corridors")
 async def get_corridors():
     try:

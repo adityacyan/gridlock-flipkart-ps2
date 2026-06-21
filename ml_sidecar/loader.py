@@ -1,5 +1,7 @@
 import joblib
 import warnings
+import pandas as pd
+from sklearn.neighbors import KDTree
 warnings.filterwarnings("ignore")
 
 from config import MODEL_FILES
@@ -29,6 +31,16 @@ def load_all():
         _store["tabnet"] = None
         print(f"TabNet skipped: {e}")
 
+    try:
+        _store["geo_lookup"] = joblib.load(MODEL_FILES["geo_lookup"])
+        coords = _store["geo_lookup"][["latitude", "longitude"]].values
+        _store["geo_kdtree"] = KDTree(coords)
+        print("Geographic lookup database loaded.")
+    except Exception as e:
+        _store["geo_lookup"] = None
+        _store["geo_kdtree"] = None
+        print(f"Geographic lookup skipped: {e}")
+
     print(f"All models loaded. Features: {len(_store['feature_names'])}")
 
 
@@ -55,3 +67,28 @@ def get_zone_classes():
     if "zone" in le:
         return [z for z in le["zone"].classes_ if z != "UNKNOWN"]
     return []
+
+
+def lookup_closest_location(lat: float, lng: float):
+    tree = _store.get("geo_kdtree")
+    df_lookup = _store.get("geo_lookup")
+    if tree is None or df_lookup is None:
+        return None
+
+    dist, idx = tree.query([[lat, lng]], k=1)
+    nearest_idx = int(idx[0][0])
+    dist_deg = float(dist[0][0])
+    row = df_lookup.iloc[nearest_idx]
+
+    # Heuristic: If the clicked point is too far from the nearest historical incident,
+    # it is likely on a different street/junction, so we do not snap to that corridor/junction.
+    # 0.0025 degrees is approx 275 meters in Bengaluru.
+    is_nearby = dist_deg <= 0.0025
+
+    return {
+        "corridor":       None if (not is_nearby or str(row["corridor"]) in ("Non-corridor", "UNKNOWN")) else str(row["corridor"]),
+        "police_station": None if str(row["police_station"]) == "UNKNOWN" else str(row["police_station"]),
+        "zone":           None if str(row["zone"]) == "UNKNOWN" else str(row["zone"]),
+        "junction":       None if (not is_nearby or str(row["junction"]) == "UNKNOWN") else str(row["junction"]),
+        "pin_code":       int(row["pin_code"]) if pd.notna(row["pin_code"]) else 560001
+    }

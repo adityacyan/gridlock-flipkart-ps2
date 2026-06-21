@@ -43,6 +43,14 @@ def infer(req: InferRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/lookup-location")
+def lookup_location(lat: float, lng: float):
+    res = loader.lookup_closest_location(lat, lng)
+    if res is None:
+        raise HTTPException(status_code=404, detail="Geographic lookup index not loaded or empty.")
+    return res
+
+
 @app.get("/meta")
 def meta():
     return {

@@ -79,7 +79,7 @@ export default function HistoryPage() {
           <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b-[3px] border-black bg-black text-white">
-                {["Time", "Event Cause", "Type", "Location", "Corridor", "Severity", "Confidence", "Officers"].map(h => (
+                {["Time", "Event Cause", "Type", "Location", "Corridor", "Severity", "Officers"].map(h => (
                   <th key={h} className="px-4 py-3 text-left font-mono-noir text-[10px] uppercase tracking-widest font-bold">{h}</th>
                 ))}
               </tr>
@@ -98,7 +98,6 @@ export default function HistoryPage() {
                   </td>
                   <td className="px-4 py-3 font-mono-noir text-xs text-[#5d5f5f]">{e.input.corridor ?? <span className="text-[#c0c0c0]">—</span>}</td>
                   <td className="px-4 py-3"><SeverityBadge label={e.severity_label} size="sm" /></td>
-                  <td className="px-4 py-3 font-mono-noir text-xs text-black tabular-nums">{(e.confidence * 100).toFixed(1)}%</td>
                   <td className="px-4 py-3 font-mono-noir text-xs text-black tabular-nums">{e.recommendations.manpower_min}–{e.recommendations.manpower_max}</td>
                 </tr>
               ))}

@@ -47,3 +47,11 @@ export interface HistoryEntry extends PredictResponse {
   timestamp: string
   input: PredictRequest
 }
+
+export interface LocationLookupResponse {
+  corridor?: string
+  police_station?: string
+  zone?: string
+  junction?: string
+  pin_code?: number
+}

@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from "framer-motion"
 import dynamic from "next/dynamic"
 import EventForm from "@/components/prediction/EventForm"
 import SeverityCard from "@/components/prediction/SeverityCard"
-import ProbabilityChart from "@/components/prediction/ProbabilityChart"
 import PredictionSkeleton from "@/components/prediction/PredictionSkeleton"
 import ResourcePanel from "@/components/prediction/ResourcePanel"
 import DemoScenarios from "@/components/prediction/DemoScenarios"
@@ -141,34 +140,30 @@ export default function PredictPage() {
             >
               <motion.div variants={reduced ? {} : item}><SeverityCard result={result} /></motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <motion.div variants={reduced ? {} : item}><ProbabilityChart probs={result.class_probabilities} /></motion.div>
-
-                <motion.div variants={reduced ? {} : item}
-                  className="bg-[#f9f9f9] border-[3px] border-black overflow-hidden"
-                  style={{ boxShadow: "4px 4px 0 0 #000" }}>
-                  <div className="px-4 py-3 border-b-[3px] border-black bg-black text-white">
-                    <span className="font-mono-noir text-[10px] font-bold uppercase tracking-widest">Event Summary</span>
+              <motion.div variants={reduced ? {} : item}
+                className="bg-[#f9f9f9] border-[3px] border-black overflow-hidden"
+                style={{ boxShadow: "4px 4px 0 0 #000" }}>
+                <div className="px-4 py-3 border-b-[3px] border-black bg-black text-white">
+                  <span className="font-mono-noir text-[10px] font-bold uppercase tracking-widest">Event Summary</span>
+                </div>
+                {lastReq && (
+                  <div className="px-4 py-1 divide-y-[2px] divide-black/10">
+                    {[
+                      { k: "Cause",   v: lastReq.event_cause.replace(/_/g, " ") },
+                      { k: "Type",    v: lastReq.event_type },
+                      { k: "Time",    v: `${String(lastReq.start_hour).padStart(2, "0")}:00` },
+                      { k: "Cluster", v: `Zone ${result.location_cluster}` },
+                      ...(lastReq.corridor ? [{ k: "Corridor", v: lastReq.corridor }] : []),
+                      ...(lastReq.zone     ? [{ k: "Zone",     v: lastReq.zone }]     : []),
+                    ].map(({ k, v }) => (
+                      <div key={k} className="flex justify-between items-center py-2.5">
+                        <span className="font-mono-noir text-[10px] uppercase tracking-widest text-[#848484]">{k}</span>
+                        <span className="font-mono-noir text-xs text-black font-bold capitalize">{v}</span>
+                      </div>
+                    ))}
                   </div>
-                  {lastReq && (
-                    <div className="px-4 py-1 divide-y-[2px] divide-black/10">
-                      {[
-                        { k: "Cause",   v: lastReq.event_cause.replace(/_/g, " ") },
-                        { k: "Type",    v: lastReq.event_type },
-                        { k: "Time",    v: `${String(lastReq.start_hour).padStart(2, "0")}:00` },
-                        { k: "Cluster", v: `Zone ${result.location_cluster}` },
-                        ...(lastReq.corridor ? [{ k: "Corridor", v: lastReq.corridor }] : []),
-                        ...(lastReq.zone     ? [{ k: "Zone",     v: lastReq.zone }]     : []),
-                      ].map(({ k, v }) => (
-                        <div key={k} className="flex justify-between items-center py-2.5">
-                          <span className="font-mono-noir text-[10px] uppercase tracking-widest text-[#848484]">{k}</span>
-                          <span className="font-mono-noir text-xs text-black font-bold capitalize">{v}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              </div>
+                )}
+              </motion.div>
 
               <motion.div variants={reduced ? {} : item}><ResourcePanel rec={result.recommendations} /></motion.div>
             </motion.div>

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { PredictRequest, MetaResponse } from "@/types"
-import { getMeta } from "@/lib/api"
+import { getMeta, lookupLocation } from "@/lib/api"
 import { validatePredictRequest } from "@/lib/validate"
 import { EVENT_CAUSES, EVENT_TYPES, VEH_TYPES } from "@/lib/severity"
 import { Loader2 } from "lucide-react"
@@ -28,6 +28,7 @@ const selectCls = `${inputCls} cursor-pointer`
 export default function EventForm({ onSubmit, loading, pickedLocation, externalPreset }: Props) {
   const [meta, setMeta] = useState<MetaResponse | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [resolving, setResolving] = useState(false)
   const [form, setForm] = useState<PredictRequest>({
     latitude:       12.9716,
     longitude:      77.5946,
@@ -42,11 +43,31 @@ export default function EventForm({ onSubmit, loading, pickedLocation, externalP
     zone:           undefined,
     veh_type:       undefined,
     duration_mins:  undefined,
+    junction:       undefined,
   })
 
   useEffect(() => { getMeta().then(setMeta).catch(() => {}) }, [])
   useEffect(() => {
-    if (pickedLocation) setForm(f => ({ ...f, latitude: pickedLocation.lat, longitude: pickedLocation.lng }))
+    if (pickedLocation) {
+      setForm(f => ({ ...f, latitude: pickedLocation.lat, longitude: pickedLocation.lng }))
+      setResolving(true)
+      lookupLocation(pickedLocation.lat, pickedLocation.lng)
+        .then(data => {
+          setForm(f => ({
+            ...f,
+            corridor:       data.corridor || undefined,
+            police_station: data.police_station || undefined,
+            zone:           data.zone || undefined,
+            junction:       data.junction || undefined,
+          }))
+        })
+        .catch(err => {
+          console.error("Geographic lookup failed:", err)
+        })
+        .finally(() => {
+          setResolving(false)
+        })
+    }
   }, [pickedLocation])
   useEffect(() => {
     if (externalPreset) setForm(externalPreset)
@@ -99,8 +120,15 @@ export default function EventForm({ onSubmit, loading, pickedLocation, externalP
           </Field>
         </div>
         {pickedLocation && (
-          <p className="font-mono-noir text-[10px] text-black border-l-2 border-black pl-2">
-            ↳ Location set from map
+          <p className="font-mono-noir text-[10px] text-black border-l-2 border-black pl-2 flex items-center gap-1.5 min-h-[16px]">
+            {resolving ? (
+              <>
+                <Loader2 size={10} className="animate-spin text-black shrink-0" />
+                Resolving neighborhood context...
+              </>
+            ) : (
+              "↳ Neighborhood context auto-filled from map click"
+            )}
           </p>
         )}
       </div>
@@ -165,6 +193,11 @@ export default function EventForm({ onSubmit, loading, pickedLocation, externalP
             <option value="">Unknown</option>
             {(meta?.police_stations ?? []).map(p => <option key={p} value={p}>{p}</option>)}
           </select>
+        </Field>
+        <Field label="Junction">
+          <input type="text" placeholder="e.g. BM Shri Junction" value={form.junction ?? ""}
+            onChange={e => set("junction", e.target.value || undefined)}
+            className={inputCls} />
         </Field>
       </div>
 

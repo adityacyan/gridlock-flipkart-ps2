@@ -1,4 +1,4 @@
-import { PredictRequest, PredictResponse, MetaResponse } from "@/types"
+import { PredictRequest, PredictResponse, MetaResponse, LocationLookupResponse } from "@/types"
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
@@ -18,5 +18,11 @@ export async function predictEvent(req: PredictRequest): Promise<PredictResponse
 export async function getMeta(): Promise<MetaResponse> {
   const res = await fetch(`${BASE}/api/meta`)
   if (!res.ok) throw new Error("Failed to fetch meta")
+  return res.json()
+}
+
+export async function lookupLocation(lat: number, lng: number): Promise<LocationLookupResponse> {
+  const res = await fetch(`${BASE}/api/lookup-location?lat=${lat}&lng=${lng}`)
+  if (!res.ok) throw new Error("Failed to lookup location details from coordinates")
   return res.json()
 }

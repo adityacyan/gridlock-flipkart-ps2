@@ -24,6 +24,7 @@ The result is a deployable, production-grade decision support tool for traffic p
 - [Target Variable](#target-variable)
 - [ML Models](#ml-models)
 - [Resource Recommendation Engine](#resource-recommendation-engine)
+- [Geographic Context Geolocator](#geographic-context-geolocator)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
@@ -264,6 +265,22 @@ Resources are computed rule-based (not ML) from the predicted severity:
 - **Rush hour bonus (x1.25):** 7-10 AM and 5-9 PM
 - **Planned events:** `pre_deploy` field suggests deploying manpower before event start
 - **Special actions:** Event-cause-specific (crowd control for public events, ambulance lanes for accidents)
+
+---
+
+## Geographic Context Geolocator
+
+To simplify event entry, the map interface is equipped with an intelligent spatial context geolocator. When a user clicks on the interactive map:
+1. **KDTree Spatial Search**: The system performs a K-Nearest Neighbors lookup via a spatial KDTree against the 8,041 unique geographic coordinates in the historical ASTRAM dataset.
+2. **Context Resolution**: The API instantly resolves and auto-populates the nearest:
+   - **Traffic Corridor** (e.g. *ORR East 1*)
+   - **Police Station Jurisdiction** (e.g. *Jeevanbheemanagar*)
+   - **Traffic Zone** (e.g. *Central Zone 1*)
+   - **Key Junction** (e.g. *BM Shri Junc*)
+   - **Pin Code** (e.g. *560038*)
+3. **Distance Threshold Safety Heuristic**: To prevent incorrect snapping, if the clicked point is further than **275 meters** (`0.0025` degrees) from any historical incident:
+   - **Corridor** and **Junction** default to `"Non-corridor"` and `"UNKNOWN"` (to prevent the ML model from inheriting false high-traffic arterial signals).
+   - **Police Station**, **Zone**, and **Pin Code** are still resolved (as they are broad administrative regions and remain geographically accurate).
 
 ---
 
@@ -525,6 +542,7 @@ label_encoders.pkl
 kmeans_model.pkl
 feature_names.pkl
 tabnet_model.zip
+geo_lookup.pkl
 ```
 
 These are excluded from git (large binary files). Generate them by running:

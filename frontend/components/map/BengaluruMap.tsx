@@ -58,7 +58,6 @@ export default function BengaluruMap({ entries = [], onMapClick, pickedLocation,
             <Popup>
               <div className="text-sm">
                 <strong>{e.severity_label}</strong> — {e.input.event_cause.replace(/_/g, " ")}<br />
-                {(e.confidence * 100).toFixed(1)}% confidence<br />
                 {new Date(e.timestamp).toLocaleString()}
               </div>
             </Popup>

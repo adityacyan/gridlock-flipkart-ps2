@@ -27,15 +27,11 @@ export default function Dashboard() {
   useEffect(() => { setHistory(getHistory()) }, [])
 
   const recent = history.slice(0, 6)
-  const avgConf = history.length
-    ? (history.reduce((s, h) => s + h.confidence, 0) / history.length * 100).toFixed(1)
-    : null
 
   const stats = [
     { label: "Total Predictions", value: history.length,                                        icon: IconBolt },
     { label: "Critical",          value: history.filter(h => h.severity_level === 3).length,    icon: IconAlertTriangle },
     { label: "High Severity",     value: history.filter(h => h.severity_level === 2).length,    icon: IconChartPie },
-    { label: "Avg Confidence",    value: avgConf ? `${avgConf}%` : "—",                        icon: IconClockHour4 },
   ]
 
   const sevCounts = ["Low", "Medium", "High", "Critical"].map(label => ({

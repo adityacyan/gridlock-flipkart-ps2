@@ -47,12 +47,54 @@ plt.rcParams.update({
 COLORS = ['#2ecc71', '#f39c12', '#e67e22', '#e74c3c']
 SEVERITY_LABELS = {0: 'Low', 1: 'Medium', 2: 'High', 3: 'Critical'}
 
-SCRIPT_DIR = Path(__file__).parent
-OUTPUT_DIR = SCRIPT_DIR / "trained_models"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-os.chdir(OUTPUT_DIR)
+# ============================================================
+# ENVIRONMENT DETECTION — Local vs Kaggle
+# ============================================================
+# Kaggle sets KAGGLE_KERNEL_RUN_TYPE; also check /kaggle/input as a fallback
+# so the script works even when run via kaggle API without env vars.
+IS_KAGGLE = (
+    os.environ.get('KAGGLE_KERNEL_RUN_TYPE') is not None
+    or Path('/kaggle/input').exists()
+)
 
-CSV_PATH = SCRIPT_DIR / "Astram event data_anonymized - Astram event data_anonymizedb40ac87 (1).csv"
+if IS_KAGGLE:
+    print("[ENV] ✅ Kaggle detected")
+    KAGGLE_INPUT = Path('/kaggle/input')
+    OUTPUT_DIR   = Path('/kaggle/working')          # Kaggle persists this dir
+    ZIP_NAME     = str(OUTPUT_DIR / 'astram_models_bundle.zip')
+
+    # Auto-discover the dataset CSV anywhere under /kaggle/input
+    all_csvs = list(KAGGLE_INPUT.rglob('*.csv'))
+    if not all_csvs:
+        raise FileNotFoundError(
+            "No CSV found under /kaggle/input.\n"
+            "Please attach the ASTRAM Event dataset to this kernel "
+            "(Notebook → Add Data) and re-run."
+        )
+    # Prefer files whose name hints at ASTRAM / anonymized data
+    astram_csvs = [
+        f for f in all_csvs
+        if any(kw in f.name.lower() for kw in ('astram', 'anonymized', 'event'))
+    ]
+    CSV_PATH = astram_csvs[0] if astram_csvs else all_csvs[0]
+    print(f"[OK] Dataset found : {CSV_PATH}")
+    print(f"[OK] Output dir    : {OUTPUT_DIR}")
+
+else:
+    print("[ENV] 💻 Running locally")
+    try:
+        SCRIPT_DIR = Path(__file__).parent
+    except NameError:
+        # __file__ is undefined in interactive sessions (e.g. Jupyter locally)
+        SCRIPT_DIR = Path.cwd()
+    OUTPUT_DIR = SCRIPT_DIR / 'trained_models'
+    CSV_PATH   = SCRIPT_DIR / 'Astram event data_anonymized - Astram event data_anonymizedb40ac87 (1).csv'
+    ZIP_NAME   = str(SCRIPT_DIR / 'astram_models_bundle.zip')
+    print(f"[OK] Dataset path  : {CSV_PATH}")
+    print(f"[OK] Output dir    : {OUTPUT_DIR}")
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 df_raw = pd.read_csv(CSV_PATH, low_memory=False)
 
 print("[OK] Dataset loaded!")
@@ -102,7 +144,7 @@ for bar, val in zip(bars, has_missing['missing_pct']):
             f'{val:.0f}%', va='center', fontsize=8)
 
 plt.tight_layout()
-plt.savefig('missing_values.png')
+plt.savefig(OUTPUT_DIR / 'missing_values.png')
 plt.show()
 
 key_cats = ['event_type', 'event_cause', 'status',
@@ -126,12 +168,13 @@ for i, col in enumerate(key_cats):
     for j, v in enumerate(vc.values):
         axes[i].text(j, v + 0.3, str(v), ha='center', fontsize=8)
 
-for j in range(i + 1, len(axes)):
+# Fix: use len(key_cats) instead of `i` which may be undefined if key_cats is empty
+for j in range(len(key_cats), len(axes)):
     axes[j].set_visible(False)
 
 plt.suptitle('Key Feature Distributions', fontsize=15, fontweight='bold', y=1.01)
 plt.tight_layout()
-plt.savefig('distributions.png')
+plt.savefig(OUTPUT_DIR / 'distributions.png')
 plt.show()
 
 df['_start_dt'] = pd.to_datetime(df['start_datetime'], utc=True, errors='coerce')
@@ -153,7 +196,7 @@ axes[1].set_title('Incidents by Day of Week', fontweight='bold')
 axes[1].set_xlabel('Day')
 
 plt.tight_layout()
-plt.savefig('temporal_overview.png')
+plt.savefig(OUTPUT_DIR / 'temporal_overview.png')
 plt.show()
 df.drop(columns=['_start_dt'], inplace=True)
 
@@ -337,7 +380,7 @@ kmeans = KMeans(n_clusters=N_CLUSTERS, random_state=42, n_init=10)
 cluster_labels = kmeans.fit_predict(valid_geo)
 df.loc[valid_geo.index, 'location_cluster'] = cluster_labels
 df['location_cluster'] = df['location_cluster'].fillna(-1).astype(int)
-joblib.dump(kmeans, 'kmeans_model.pkl')
+joblib.dump(kmeans, OUTPUT_DIR / 'kmeans_model.pkl')
 print(f"[OK] {N_CLUSTERS} geo-clusters created over Bengaluru")
 
 # Cluster visualisation
@@ -349,7 +392,7 @@ plt.title(f'Bengaluru Incident Clusters (K={N_CLUSTERS})',
 plt.xlabel('Longitude'); plt.ylabel('Latitude')
 plt.colorbar(scatter, label='Cluster')
 plt.tight_layout()
-plt.savefig('geo_clusters.png')
+plt.savefig(OUTPUT_DIR / 'geo_clusters.png')
 plt.show()
 
 
@@ -503,7 +546,10 @@ CANDIDATE_FEATURES = [
     'police_station',        # 0% null - strong location proxy
     'zone',                  # 57.9% null filled -> UNKNOWN
     'junction',              # 69.3% null filled -> UNKNOWN
-    'status',                # 0% null
+    # WARNING: 'status' (e.g. 'closed'/'active') may be a post-event admin field.
+    # Only include if it is set AT THE TIME of incident creation, not after resolution.
+    # If set post-resolution it constitutes target leakage - audit before keeping.
+    'status',                # 0% null - audit for leakage risk
 ]
 
 FEATURE_COLS = [c for c in CANDIDATE_FEATURES if c in df.columns]
@@ -511,6 +557,26 @@ print(f"Using {len(FEATURE_COLS)} features:")
 for f in FEATURE_COLS:
     n_null = df[f].isnull().sum()
     print(f"  {'[OK]' if n_null == 0 else '[WARN]'} {f:<25} (nulls: {n_null})")
+
+# == Build geolookup database ==========================
+print("\nCreating geographic lookup database...")
+valid_geo_df = df[(df['latitude'] > 0) & (df['longitude'] > 0)].copy()
+for col in ['corridor', 'police_station', 'zone', 'junction']:
+    if col in valid_geo_df.columns:
+        valid_geo_df[col] = valid_geo_df[col].fillna('UNKNOWN').astype(str)
+if 'pin_code' in valid_geo_df.columns:
+    valid_geo_df['pin_code'] = valid_geo_df['pin_code'].fillna(560001).astype(int)
+else:
+    valid_geo_df['pin_code'] = 560001
+
+geo_lookup = valid_geo_df.groupby(['latitude', 'longitude']).agg({
+    'corridor': lambda x: x.mode()[0] if not x.empty else 'Non-corridor',
+    'police_station': lambda x: x.mode()[0] if not x.empty else 'UNKNOWN',
+    'zone': lambda x: x.mode()[0] if not x.empty else 'UNKNOWN',
+    'junction': lambda x: x.mode()[0] if not x.empty else 'UNKNOWN',
+    'pin_code': lambda x: int(x.mode()[0]) if not x.empty else 560001
+}).reset_index()
+print(f"[OK] Created geo lookup with {len(geo_lookup)} unique locations.")
 
 # == Build model dataframe =============================
 df_model = df[FEATURE_COLS + [TARGET]].copy()
@@ -528,7 +594,7 @@ for col in cat_cols:
     df_model[col] = le.fit_transform(df_model[col])
     label_encoders[col] = le
 
-joblib.dump(label_encoders, 'label_encoders.pkl')
+joblib.dump(label_encoders, OUTPUT_DIR / 'label_encoders.pkl')
 
 # == Fill remaining numeric nulls with column median ===
 num_cols = [c for c in df_model.select_dtypes(include=np.number).columns
@@ -553,14 +619,14 @@ corr_with_target.plot(kind='barh', color='#3498db', edgecolor='black', alpha=0.8
 plt.title('Feature Correlation with Target (Severity)', fontsize=12, fontweight='bold')
 plt.xlabel('|Pearson Correlation|')
 plt.tight_layout()
-plt.savefig('feature_target_correlation.png')
+plt.savefig(OUTPUT_DIR / 'feature_target_correlation.png')
 plt.show()
 
 X = df_model.drop(columns=[TARGET])
 y = df_model[TARGET].astype(int)
 
 FEATURE_NAMES = X.columns.tolist()
-joblib.dump(FEATURE_NAMES, 'feature_names.pkl')
+joblib.dump(FEATURE_NAMES, OUTPUT_DIR / 'feature_names.pkl')
 
 print("Class distribution:")
 for c, n in y.value_counts().sort_index().items():
@@ -576,7 +642,7 @@ print(f"\nTrain: {len(X_train):,}  |  Test: {len(X_test):,}")
 scaler = StandardScaler()
 X_train_sc = scaler.fit_transform(X_train).astype(np.float32)
 X_test_sc  = scaler.transform(X_test).astype(np.float32)
-joblib.dump(scaler, 'scaler.pkl')
+joblib.dump(scaler, OUTPUT_DIR / 'scaler.pkl')
 print("[OK] Scaler saved")
 
 # CELL 10: MODEL 1 - LightGBM
@@ -642,11 +708,11 @@ ax.barh(fi_df['feature'], fi_df['importance'],
 ax.set_title('LightGBM Feature Importances\n(red = top 25%)',
              fontsize=12, fontweight='bold')
 plt.tight_layout()
-plt.savefig('lgbm_feature_importance.png')
+plt.savefig(OUTPUT_DIR / 'lgbm_feature_importance.png')
 plt.show()
 
-lgbm.booster_.save_model('lgbm_model.txt')
-joblib.dump(lgbm, 'lgbm_model.pkl')
+lgbm.booster_.save_model(str(OUTPUT_DIR / 'lgbm_model.txt'))
+joblib.dump(lgbm, OUTPUT_DIR / 'lgbm_model.pkl')
 print("[OK] Saved: lgbm_model.pkl + lgbm_model.txt")
 
 
@@ -669,7 +735,7 @@ xgbm = xgb.XGBClassifier(
     eval_metric='mlogloss',
     early_stopping_rounds=80,
     verbosity=0,
-    use_label_encoder=False,
+    # Removed deprecated use_label_encoder=False (XGBoost >= 1.6)
 )
 xgbm.fit(X_train, y_train,
          sample_weight=sw_train,
@@ -686,8 +752,8 @@ print("\nClassification Report:")
 print(classification_report(y_test, xgb_preds,
       target_names=[SEVERITY_LABELS[i] for i in range(4)]))
 
-xgbm.save_model('xgb_model.json')
-joblib.dump(xgbm, 'xgb_model.pkl')
+xgbm.save_model(str(OUTPUT_DIR / 'xgb_model.json'))
+joblib.dump(xgbm, OUTPUT_DIR / 'xgb_model.pkl')
 print("[OK] Saved: xgb_model.pkl + xgb_model.json")
 
 # CELL 12: MODEL 3 - MLP Neural Network
@@ -731,14 +797,14 @@ if hasattr(mlp, 'validation_scores_') and mlp.validation_scores_:
     ax2 = plt.gca().twinx()
     ax2.plot(mlp.validation_scores_, label='Val Accuracy',
              color='#2ecc71', linewidth=2)
-    ax2.set_ylabel('Val Accuracy', color='#2ecc21')
+    ax2.set_ylabel('Val Accuracy', color='#2ecc71')  # Fixed: was '#2ecc21' (typo)
 plt.title('MLP Learning Curve', fontsize=12, fontweight='bold')
 plt.xlabel('Epoch'); plt.ylabel('Loss')
 plt.tight_layout()
-plt.savefig('mlp_learning_curve.png')
+plt.savefig(OUTPUT_DIR / 'mlp_learning_curve.png')
 plt.show()
 
-joblib.dump(mlp, 'mlp_model.pkl')
+joblib.dump(mlp, OUTPUT_DIR / 'mlp_model.pkl')
 print("[OK] Saved: mlp_model.pkl")
 
 #WHY TabNet:
@@ -799,10 +865,10 @@ if TABNET_AVAILABLE:
     fi_tn.plot(kind='barh', color='#9b59b6', edgecolor='white')
     plt.title('TabNet Attention Feature Importance', fontsize=12, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('tabnet_feature_importance.png')
+    plt.savefig(OUTPUT_DIR / 'tabnet_feature_importance.png')
     plt.show()
 
-    tabnet.save_model('tabnet_model')
+    tabnet.save_model(str(OUTPUT_DIR / 'tabnet_model'))
     print("[OK] Saved: tabnet_model.zip")
 else:
     print("[WARNING] TabNet skipped.")
@@ -841,7 +907,7 @@ for fold, (tr_idx, val_idx) in enumerate(skf.split(X_train, y_train), 1):
     lf.fit(Xf_tr, yf_tr,
            eval_set=[(Xf_val, yf_val)],
            callbacks=[lgb.early_stopping(60, verbose=False),
-                      lgb.log_evaluation(-1)])
+                      lgb.log_evaluation(0)])  # Fixed: -1 is invalid; 0 suppresses logs
     p_lgbm = lf.predict_proba(Xf_val)
 
     # == XGBoost fold ==
@@ -886,7 +952,7 @@ meta_lgb = lgb.LGBMClassifier(
     random_state=42, verbose=-1
 )
 meta_lgb.fit(oof_probs, y_train)
-joblib.dump(meta_lgb, 'meta_learner.pkl')
+joblib.dump(meta_lgb, OUTPUT_DIR / 'meta_learner.pkl')
 
 # == Evaluate ==========================================
 ens_preds = meta_lgb.predict(meta_test)
@@ -947,7 +1013,7 @@ for i, metric in enumerate(metrics):
 
 plt.suptitle('Model Comparison - ASTRAM Congestion Severity', fontsize=13, fontweight='bold')
 plt.tight_layout()
-plt.savefig('model_comparison.png')
+plt.savefig(OUTPUT_DIR / 'model_comparison.png')
 plt.show()
 
 # == Confusion matrices =================================
@@ -970,7 +1036,7 @@ for ax, (name, preds) in zip(axes, plot_models):
     ax.set_ylabel('True'); ax.set_xlabel('Predicted')
 
 plt.tight_layout()
-plt.savefig('confusion_matrices.png')
+plt.savefig(OUTPUT_DIR / 'confusion_matrices.png')
 plt.show()
 
 RESOURCE_TABLE = {
@@ -1090,7 +1156,8 @@ def predict_congestion(
         'day_of_week':       day_of_week,
         'month':             month,
         'day':               day,
-        'day_of_year':       pd.Timestamp(f'2024-{month:02d}-{day:02d}').day_of_year,
+        # Fixed: use current year instead of hardcoded 2024 to avoid leap-year edge cases
+        'day_of_year':       pd.Timestamp(f'{pd.Timestamp.now().year}-{month:02d}-{day:02d}').day_of_year,
         'is_weekend':        int(day_of_week >= 5),
         'is_night':          int(start_hour >= 22 or start_hour <= 5),
         'is_morning_rush':   int(7 <= start_hour <= 10),
@@ -1193,53 +1260,55 @@ pkl_artifacts = {
     'label_encoders.pkl': label_encoders,
     'kmeans_model.pkl'  : kmeans,
     'feature_names.pkl' : FEATURE_NAMES,
+    'geo_lookup.pkl'    : geo_lookup,
 }
 
 for fname, obj in pkl_artifacts.items():
-    joblib.dump(obj, fname)
-    kb = os.path.getsize(fname) / 1024
+    fpath = OUTPUT_DIR / fname
+    joblib.dump(obj, fpath)
+    kb = os.path.getsize(fpath) / 1024
     print(f"✅ {fname:<30} ({kb:.0f} KB)")
 
 # Save native model formats
-xgbm.save_model('xgb_model.json')
-lgbm.booster_.save_model('lgbm_model.txt')
+xgbm.save_model(str(OUTPUT_DIR / 'xgb_model.json'))
+lgbm.booster_.save_model(str(OUTPUT_DIR / 'lgbm_model.txt'))
 
 if TABNET_AVAILABLE:
-    tabnet.save_model('tabnet_model')
+    tabnet.save_model(str(OUTPUT_DIR / 'tabnet_model'))
     print("✅ tabnet_model.zip")
 
 print("✅ xgb_model.json")
 print("✅ lgbm_model.txt")
 
-# Files to include in bundle
-bundle_files = list(pkl_artifacts.keys()) + [
-    'xgb_model.json',
-    'lgbm_model.txt',
-    'missing_values.png',
-    'distributions.png',
-    'temporal_overview.png',
-    'geo_clusters.png',
-    'target_distribution.png',
-    'feature_target_correlation.png',
-    'lgbm_feature_importance.png',
-    'mlp_learning_curve.png',
-    'model_comparison.png',
-    'confusion_matrices.png',
+# Files to include in bundle (all resolved to OUTPUT_DIR absolute paths)
+bundle_files = [OUTPUT_DIR / f for f in list(pkl_artifacts.keys())] + [
+    OUTPUT_DIR / 'xgb_model.json',
+    OUTPUT_DIR / 'lgbm_model.txt',
+    OUTPUT_DIR / 'missing_values.png',
+    OUTPUT_DIR / 'distributions.png',
+    OUTPUT_DIR / 'temporal_overview.png',
+    OUTPUT_DIR / 'geo_clusters.png',
+    OUTPUT_DIR / 'target_distribution.png',
+    OUTPUT_DIR / 'feature_target_correlation.png',
+    OUTPUT_DIR / 'lgbm_feature_importance.png',
+    OUTPUT_DIR / 'mlp_learning_curve.png',
+    OUTPUT_DIR / 'model_comparison.png',
+    OUTPUT_DIR / 'confusion_matrices.png',
 ]
 
-if TABNET_AVAILABLE and os.path.exists('tabnet_model.zip'):
-    bundle_files.append('tabnet_model.zip')
+if TABNET_AVAILABLE and (OUTPUT_DIR / 'tabnet_model.zip').exists():
+    bundle_files.append(OUTPUT_DIR / 'tabnet_model.zip')
 
-# Save ZIP to project root
-ZIP_NAME = str(SCRIPT_DIR / "astram_models_bundle.zip")
+# ZIP_NAME is already set at the top based on environment (Kaggle vs local)
 
 with zipfile.ZipFile(ZIP_NAME, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
     for f in bundle_files:
-        if os.path.exists(f):
-            zf.write(f)
-            print(f"📁 Added: {f}")
+        f = Path(f)
+        if f.exists():
+            zf.write(f, arcname=f.name)  # store with basename only (no full path in zip)
+            print(f"📁 Added: {f.name}")
         else:
-            print(f"⚠️ Missing: {f}")
+            print(f"⚠️ Missing: {f.name}")
 
 mb = os.path.getsize(ZIP_NAME) / (1024 * 1024)
 
@@ -1248,5 +1317,8 @@ print(f"📦 Bundle Created Successfully!")
 print(f"📍 Location: {ZIP_NAME}")
 print(f"📏 Size: {mb:.2f} MB")
 print("=" * 60)
-
-print("Artifacts saved to: trained_models/")
+if IS_KAGGLE:
+    print("📂 All artifacts saved to: /kaggle/working/")
+    print("   Download the ZIP from the Kaggle output panel →")
+else:
+    print("📂 Artifacts saved to: trained_models/")
