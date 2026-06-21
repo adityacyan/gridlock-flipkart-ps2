@@ -1,4 +1,4 @@
-# ASTRAM Gridlock -- Bengaluru Traffic Congestion Prediction
+# Traffic Noir Gridlock -- Bengaluru Traffic Congestion Prediction
 
 Every morning, 10 million people in Bengaluru get into a vehicle and hope. Hope that the road ahead is clear. Hope that the rally on MG Road won't snarl the evening commute. Hope that the water-logged underpass near Hebbal isn't going to cost them two hours.
 
