@@ -243,13 +243,18 @@ export default function LandingPage() {
           <div className="font-display text-sm text-black">
             © 2024 TRAFFIC.NOIR — TACTICAL DATA SYSTEMS
           </div>
-          <nav className="flex flex-wrap justify-center gap-6">
-            {["PRIVACY", "TERMS", "API_DOCS", "GITHUB"].map(l => (
-              <a key={l} href="#"
-                className="eyebrow hover:text-black hover:underline transition-all duration-200">
-                {l}
-              </a>
-            ))}
+          <nav className="flex flex-wrap justify-center gap-6 items-center">
+            <span className="eyebrow text-[#848484]">FOR HACKATHON</span>
+            <a href="#"
+              className="eyebrow hover:text-black hover:underline transition-all duration-200">
+              API_DOCS
+            </a>
+            <a href="https://github.com/adityacyan/gridlock-flipkart-ps2/blob/master/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="eyebrow hover:text-black hover:underline transition-all duration-200">
+              GITHUB
+            </a>
           </nav>
           <span className="eyebrow">FLIPKART GRID 7.0</span>
         </div>
